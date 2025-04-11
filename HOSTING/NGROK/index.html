@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    
+    <title>+4 DUEL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" type="image/png" href="/static/img/favicon.jpg">
+
+</head>
+<body>
+    <div id="sonidos">
+        <button id="toggleSound" class="contenedor-musica1" onclick="toggleSound()">🔊 Sonidos</button>
+    </div>
+
+    <div id="musica" >
+        <audio id="audio" loop>
+            <source src="/static/musica/chill1.mp3" type="audio/mpeg">
+            Tu navegador no soporta audio HTML5.
+        </audio>
+        <button id="playMusic" class="contenedor-musica" onclick="iniciarMusica()">🔇 Música</button>
+    </div>
+
+    <div id="contenedor-cambiar-id">
+        <h3>Cambiar ID</h3>
+        <input type="text" id="nuevo-id" placeholder="Nuevo ID">
+        <button id="btn-cambiar-id" class="cambiarNombrebtn" onclick= "sonidoBoton()">Cambiar</button>
+       
+    </div>
+
+    <div class="container" id="configuracionSala">
+        <h1 class="negro"><span2 class="animacion">+4</span2> DUEL</h1>
+        <h3 class="negro">“Reinterpretación personal del juego UNO con fines educativos.”</h3>
+      
+        <div class="sala-config">
+          <h2 class="negro">Sala Pública</h2>
+          <div class="form-row">
+            <label for="sala" class="negro">Nombre de la Sala:</label>
+            <input type="text" id="sala" placeholder="Ingrese el nombre">
+            <button onclick="sonidoBoton();unirseSala()">Crear sala</button>
+          </div>
+      
+          <div class="estado-sala">
+            <h3 >Estás en la sala: <span id="salaActual" class="salaNombre"></span></h3>
+            <h3>Jugadores en la sala: <span id="jugadoresCount">0</span></h3>
+          </div>
+        </div>
+      </div>
+      
+
+<div class="container" id="botonComenzar" style="display:none;">
+    <button id="comenzarBtn" onclick="comenzarJuego(); sonidoBoton()">⏩⏩ Comenzar Juego ⏪⏪</button>
+</div>
+
+    <div class="container" id="listaSalasContainer">
+        <h2 class="lista">Lista de Salas:</h2>
+        <ul id="listaSalas" ></ul>
+    </div>
+
+
+
+<div class="container1" id="partida" style="display:none;">
+    <button onclick="salirSala()" class="btn-salir"> ❌ Salir Sala</button>
+    <h3><span id="hostJuego" class="hostSala"></span></h3>
+    <div id="contenedor-rivales" class="contenedor-rivales"></div>
+    <h2 id="3omas"> Es el turno de<span id="turnoJugador" class="nombreturno"></span></h2>
+    <div id="cartaInicial"></div>
+    <button id="robarCarta" class="btn-robar"  onclick= "sonidoBoton()">🃏 Robar Carta</button>
+    <button id="pasarTurno" class="btn-turno"  onclick= "sonidoBoton()">🔁 Pasar Turno</button>
+    <div id="cartas"></div>
+    <div id="jugadoresTurno" class="contenedor-turnos"></div>
+
+    
+    
+
+</div>
+
+<div class="modal" id="modalColor" style="display: none;">
+    <div class="modal-content">
+        <h3>Elige un color</h3>
+        <select id="colorSeleccionado">
+            <option value="rojo">🔴Rojo</option>
+            <option value="azul">🔵Azul</option>
+            <option value="amarillo">🟡Amarillo</option>
+            <option value="verde">🟢Verde</option>
+        </select>
+        <button id="confirmarColor">Confirmar</button>
+    </div>
+</div>
+
+
+<div id="overlay" style="display: none;"></div>
+
+ 
+
+
+<script>
+       
+        var cartaSeleccionada = null;
+        var socket = io.connect("https://gopher-sunny-singularly.ngrok-free.app/"); 
+        //var socket = io.connect("http://127.0.0.1:5000"); 
+        var id_jugador = localStorage.getItem("id_jugador") || Math.floor(Math.random() * 10000);
+        localStorage.setItem("id_jugador", id_jugador);
+        const sonido = document.getElementById("sonidoClick")
+        const hoverCarta = document.getElementById("sonidoHoverCarta")
+        
+        socket.on("error", function(data){
+            if (data.id == localStorage.getItem("id_jugador")){
+                alert(data.mensaje);
+                console.error("error recibido: ", data.mensaje);
+            }
+           
+        });
+
+    
+
+        function unirseSala() {
+            var sala = document.getElementById("sala").value;
+            if (!sala) {
+                alert("Debes ingresar una sala");
+                return;
+            }
+        
+            const id_jugador = localStorage.getItem("id_jugador");
+            const nombre_jugador = id_jugador.startsWith("Jugador") ? `Jugador ${id_jugador}` : id_jugador;
+        
+            localStorage.setItem("sala", sala);
+            document.getElementById("salaActual").innerText = sala;
+            socket.emit("unirse_sala", { id: id_jugador, nombre: nombre_jugador, sala: sala });
+        }
+        
+       
+        function salirSala() {
+           
+                
+                var sala = localStorage.getItem("sala");
+                if (sala) {
+                    socket.emit("salir_sala", { id: id_jugador, sala: sala });
+                }
+    
+                document.querySelector("body").style.all= "unset";
+                localStorage.removeItem("colorElegido");
+                localStorage.removeItem("sala");
+                localStorage.removeItem("juegoActivo");
+                localStorage.removeItem("turno");
+                localStorage.removeItem("host");
+                location.reload();
+        };
+           
+        socket.on("estado_actual", function(data) {
+            if (!data.juegoActivo) {
+                localStorage.setItem("juegoActivo", "false");
+                document.getElementById("configuracionSala").style.display = "block";
+                document.getElementById("listaSalasContainer").style.display = "block";
+                document.getElementById("partida").style.display = "none";
+                return;
+            }
+        
+            localStorage.setItem("juegoActivo", "true");
+            localStorage.setItem("turno", data.turno);
+            localStorage.setItem("host", data.host);
+            localStorage.setItem("cartaInicial", JSON.stringify(data.carta_inicial));
+        
+            mostrarJuego();
+            actualizarEstado();
+            mostrarCartaInicial(data.carta_inicial);
+        
+            // Renderizar el orden de turnos al recibir el estado inicial
+            renderizarOrdenTurnos(data.jugadores, data.turno);
+        
+            // Mostrar cartas ocultas si hay dos jugadores
+            if (Object.keys(data.jugadores).length === 2) {
+                mostrarCartasOcultasDeOtrosJugadores(data);
+            } else {document.getElementById("3omas").style.marginLeft = "270px";
+                            
+        } // Ajustar el margen izquierdo
+        });
+        
+        
+        window.onload = function() {
+            var sala_guardada = localStorage.getItem("sala");
+            var juegoActivo = localStorage.getItem("juegoActivo");
+            var cartaRobada = localStorage.getItem("cartaRobada") === "true"; 
+           
+            if (localStorage.getItem("esperando_color") === "true") {
+                socket.emit("solicitar_color", {
+                    id: localStorage.getItem("id_jugador"),
+                    sala: localStorage.getItem("sala")
+                });
+            }
+            
+        
+        
+            if (sala_guardada) {
+                const id_jugador = localStorage.getItem("id_jugador");
+                const nombre_jugador = id_jugador.startsWith("Jugador") ? `Jugador ${id_jugador}` : id_jugador;
+            
+                document.getElementById("salaActual").innerText = sala_guardada;
+                socket.emit("unirse_sala", { id: id_jugador, nombre: id_jugador, sala: sala_guardada });
+
+                socket.emit("obtener_estado", { sala: sala_guardada });
+            }
+        
+            if (juegoActivo === "true") {
+
+                mostrarJuego();
+                actualizarEstado();
+
+                // Renderizar el orden de turnos al recargar la página
+                const jugadores = JSON.parse(localStorage.getItem("jugadores")) || {};
+                const turno = localStorage.getItem("turno");
+                renderizarOrdenTurnos(jugadores, turno);
+
+                // Mostrar cartas ocultas si hay dos jugadores
+                socket.emit("solicitar_cartas_ocultas", { sala: sala_guardada , id: id_jugador });
+            }
+            
+            console.log("Turno al recargar:", localStorage.getItem("turno"));
+            console.log("Carta robada al recargar:", localStorage.getItem("cartaRobada"));
+        };
+        
+        
+      
+
+        socket.on("sala_unida", function(data) {
+            localStorage.setItem("sala", data.sala);
+            document.getElementById("salaActual").innerText = data.sala;
+        });
+        
+        socket.on("cartas_repartidas", function(data) {
+            const id_jugador = localStorage.getItem("id_jugador");
+            const divCartas = document.getElementById("cartas");
+            divCartas.innerHTML = ""; // Limpiar las cartas antes de agregar las nuevas
+        
+            const miMano = data.jugadores[id_jugador]?.mano || [];
+        
+            // Crear y agregar el título "Tus Cartas"
+            const titulo = document.createElement("div");
+            titulo.id = "tusCartasTXT";
+            
+            divCartas.appendChild(titulo);
+        
+            // Recorrer las cartas del jugador y agregarlas al contenedor
+            miMano.forEach(function(carta, index) {
+                const cartaElemento = document.createElement("div");
+                cartaElemento.classList.add("miCarta");
+        
+                // Asigna un id único para cada carta basado en su índice
+                cartaElemento.id = "carta" + (index + 1);
+        
+                const imgCarta = document.createElement("img");
+                imgCarta.src = `/static/img/${carta.Color.toLowerCase()}_${carta.valor}.jpg`;
+                imgCarta.alt = `${carta.Color} ${carta.valor}`;
+        
+                // Asigna los atributos de la carta a los datos para poder recuperarlos después
+                cartaElemento.dataset.color = carta.Color;
+                cartaElemento.dataset.valor = carta.valor;
+        
+                cartaElemento.appendChild(imgCarta);
+        
+                // Añadir un evento para seleccionar la carta al hacer click
+                cartaElemento.addEventListener("click", function() {
+                    seleccionarCarta(cartaElemento);
+                });
+                
+                cartaElemento.addEventListener("mouseenter", () => {
+                    reproducirHoverCarta();
+                  });
+
+                // Agregar la carta al contenedor de cartas
+                divCartas.appendChild(cartaElemento);
+                bordeImagenCarta(cartaElemento);
+            });
+        
+            // Ajustar la posición de las cartas
+            ajustarPosicionCartas();
+            actualizarEstado();
+        });
+        
+        
+        socket.on("mostrar_comenzar", function(data) {
+            id_jugador = localStorage.getItem("id_jugador");
+            document.getElementById("jugadoresCount").innerText = data.jugadores.length;
+            if (data.host === id_jugador && data.jugadores.length > 1) {
+                document.getElementById("botonComenzar").style.display = "flex";
+            }
+        });
+        
+        function comenzarJuego() {
+            socket.emit("comenzar_juego", { sala: localStorage.getItem("sala") });
+            document.getElementById("botonComenzar").style.display = "none";
+            document.getElementById("configuracionSala").style.color = "black";
+            document.getElementById("contenedor-cambiar-id").style.display = "none";
+            document.body.style.overflow = "hidden"; // Deshabilita el scroll
+
+           
+        }
+        
+        function mostrarCartaInicial(carta) {
+            if (!carta) return; // Evita errores si no hay carta inicial
+        
+            let cartaElemento = document.getElementById("cartaInicial");
+            cartaElemento.innerHTML = ""; // Limpiar antes de agregar la nueva carta
+        
+            let imgCarta = document.createElement("img");
+            imgCarta.src = `/static/img/${carta.Color.toLowerCase()}_${carta.valor}.jpg`;
+            imgCarta.alt = `${carta.Color} ${carta.valor}`;
+
+            
+            imgCarta.classList.add("cartaInicial");
+            cartaElemento.appendChild(imgCarta);
+            bordeImagenCarta(cartaElemento);
+
+        }
+           
+        socket.on("barajas_intercambiadas", function(data) {
+            if( data.id_jugador1 == localStorage.getItem("id_jugador")){
+                alert(`¡Intercambio de barajas entre ${data.jugador1} y ${data.jugador2}!`);
+            }else if(data.id_jugador2 == localStorage.getItem("id_jugador")){
+                alert(`¡Intercambio de barajas entre ${data.jugador2} y ${data.jugador1}!`);
+        }
+        });
+        
+
+        function ajustarPosicionCartas() {
+            const divCartas = document.getElementById("cartas");
+            const cartas = divCartas.querySelectorAll('.miCarta');
+
+            const totalCartas = cartas.length;
+        
+            // Cálculo del espacio dinámico entre las cartas
+            const espacio = Math.max(150 - totalCartas * 10, 40);
+    
+        
+            cartas.forEach((carta, index) => {
+                // Calcula la posición para cada carta
+                carta.style.left = `${index * espacio - 30}px`;
+        
+               
+                });
+            }
+        
+      
+            socket.on("juego_comenzado", function(data) {
+                console.log("Evento juego_comenzado recibido:", data);
+            
+                if (!data.carta_inicial) {
+                    console.error("Error: No hay carta inicial en data.carta_inicial");
+                    return;
+                }
+            
+                localStorage.setItem("juegoActivo", "true");
+                localStorage.setItem("turno", data.turno);
+                localStorage.setItem("host", data.host);
+                localStorage.setItem("cartaInicial", JSON.stringify(data.carta_inicial));
+                localStorage.setItem("cartaRobada", "false");  // Asegurar que empieza sin carta robada
+            
+                mostrarJuego();
+                actualizarEstado();
+                mostrarCartaInicial(data.carta_inicial);
+
+                const jugadores = JSON.parse(localStorage.getItem("jugadores")) || {};
+                const turno = localStorage.getItem("turno");
+                renderizarOrdenTurnos(jugadores, turno);
+            
+                //  Habilitar botón de robar carta si es el primer turno
+                if (data.turno === localStorage.getItem("id_jugador")) {
+                    document.getElementById("robarCarta").disabled = false;
+                } else {
+                    document.getElementById("robarCarta").disabled = true;
+                }
+            });
+            
+        function bordeImagenCarta(cartaElemento){
+            if (cartaElemento.dataset.color === "negro" && cartaElemento.dataset.valor === "cambioBaraja") {
+                cartaElemento.style.padding = "0px ";
+                cartaElemento.style.backgroundColor = "black";
+            }
+        }
+        
+       
+        function mostrarJuego() {
+            document.getElementById("listaSalasContainer").style.display = "none";
+            document.getElementById("configuracionSala").style.display = "none";
+            document.getElementById("contenedor-cambiar-id").style.display = "none";
+            document.getElementById("partida").style.display = "block";
+            document.body.style.overflow = "hidden"; // Deshabilita el scroll
+            
+        
+            // Si ya hay una carta inicial en el almacenamiento, mostrarla
+            let cartaInicialGuardada = localStorage.getItem("cartaInicial");
+            if (cartaInicialGuardada) {
+                try {
+                    mostrarCartaInicial(JSON.parse(cartaInicialGuardada));
+                } catch (e) {
+                    console.error("Error al parsear carta inicial:", e);
+                }
+            }
+        }
+       
+        function seleccionarCarta(cartaElemento) {
+            // Verificar si es el turno del jugador
+            if (localStorage.getItem("turno") !== id_jugador.toString()) {
+                alert("No es tu turno para jugar.");
+                return; // No permitir seleccionar cartas si no es el turno del jugador
+            }
+        
+            cartaSeleccionada = cartaElemento;
+            let cartaInicialGuardada = localStorage.getItem("cartaInicial");
+            
+            if (cartaInicialGuardada) {
+                mostrarCartaInicial(JSON.parse(cartaInicialGuardada));
+            
+            // Mostrar en consola la carta seleccionada
+            console.log("Carta seleccionada:", cartaSeleccionada);
+            
+            // Intentar jugar la carta seleccionada
+            jugarCarta();
+            
+            
+        }
+    }
+
+
+        function animacionCartaCentro(cartaSeleccionada) {
+            // Obtener la carta inicial y la carta seleccionada
+
+            let cartaInicial =  document.querySelector(".cartaInicial");
+            let posInicial = cartaInicial.getBoundingClientRect();  // Posición de la carta inicial
+            let posCartaMover = cartaSeleccionada.getBoundingClientRect();  // Posición de la carta seleccionada
+        
+            // Calcular las diferencias en X y Y
+            let deltaX = posInicial.left - posCartaMover.left;
+            let deltaY = posInicial.top - posCartaMover.top;
+        
+            // Forzar el reflujo para asegurar que el estilo se renderiza antes de aplicar la animación
+            cartaSeleccionada.offsetHeight;  // Forzamos un reflujo
+            cartaSeleccionada.style.position = 'absolute';  // Necesitamos 'absolute' para que 'transform' funcione
+            cartaSeleccionada.style.transition = "transform 0.4 s ease-in-out";  // Definir la duración de la animación
+            cartaSeleccionada.style.transform = `translate(${deltaX-10}px, ${deltaY-65}px)`;  // Retraso muy corto para permitir que el navegador procese el estilo antes de la animación
+        }
+         
+            
+
+            function jugarCarta() {
+                const cartaInicial = JSON.parse(localStorage.getItem("cartaInicial"));
+                
+                if (cartaSeleccionada) {
+                    const colorSeleccionado = cartaSeleccionada.dataset.color;
+                    const valorSeleccionado = cartaSeleccionada.dataset.valor;
+            
+                    const colorInicial = cartaInicial.Color.toLowerCase();
+                    const valorInicial = cartaInicial.valor;
+            
+                    if (colorSeleccionado === colorInicial || valorSeleccionado === valorInicial || colorSeleccionado == "negro") {
+                        console.log("carta valida: " + colorSeleccionado + valorSeleccionado);
+                        
+                        // Llama a la función de animación
+                        animacionCartaCentro(cartaSeleccionada);
+                        // Espera un tiempo antes de eliminar la carta
+                       
+                        // Elimina la carta después de la animación
+                        localStorage.setItem("cartaRobada", "false");
+                        setTimeout(() => {
+                            socket.emit("validarCarta", { color: colorSeleccionado, valor: valorSeleccionado, id: id_jugador, sala: localStorage.getItem("sala") });
+                            cartaSeleccionada.remove(); 
+                        }, 700); // Cambia este tiempo según la duración de la animación
+                      
+                       
+                    } else {
+                        console.log("Carta no válida");
+                    }
+                }
+            }
+
+
+
+            function mostrarCartasOcultasDeOtrosJugadores(data) {
+                // Seleccionamos un contenedor específico donde colocar las cartas
+                var contenedorRivales = document.getElementById("contenedor-rivales");
+            
+                // Recorremos todos los jugadores menos el jugador actual
+                for (var otroId in data.jugadores) {
+                    if (otroId !== id_jugador) {
+                        var manoOtro = data.jugadores[otroId].mano || [];
+                        var divOtro = document.getElementById("cartas-jugador-" + otroId);
+            
+                        // Crear el div si no existe
+                        if (!divOtro) {
+                            divOtro = document.createElement("div");
+                            divOtro.id = "cartas-jugador-" + otroId;
+                            divOtro.classList.add("mano-oculta");
+            
+                            // Opcional: título para saber de quién son
+                            var titulo = document.createElement("h4");
+                            titulo.textContent = "Jugador " + otroId;
+                            divOtro.appendChild(titulo);
+            
+                            // Insertamos el div en el contenedor de rivales
+                            contenedorRivales.appendChild(divOtro);
+                        }
+            
+                        divOtro.innerHTML = ""; // Limpiar el contenido del div
+            
+                        // Volver a agregar el título después de limpiar
+                        var titulo = document.createElement("h4");
+                        titulo.textContent = "Jugador " + otroId;
+                        divOtro.appendChild(titulo);
+            
+                        // Mostrar las cartas como reverso
+                        manoOtro.forEach(function(_, i) {
+                            var cartaOculta = document.createElement("div");
+                            cartaOculta.classList.add("carta-oculta");
+            
+                            var imgReverso = document.createElement("img");
+                            imgReverso.src = "/static/img/reversoCarta.jpg"; // Imagen de reverso
+                            imgReverso.alt = "Carta oculta";
+            
+                            cartaOculta.appendChild(imgReverso);
+                            divOtro.appendChild(cartaOculta);
+                        });
+            
+                        // Calcular el espacio dinámico entre las cartas y distribuirlas dentro del div del jugador
+                        const cartas = divOtro.querySelectorAll('.carta-oculta');
+                        const totalCartas = cartas.length;
+            
+                        // Cálculo del espacio dinámico entre las cartas
+                        const espacio = Math.max(130 - totalCartas * 10, 40);
+            
+                        cartas.forEach((carta, index) => {
+                            // Calcula la posición para cada carta
+                            carta.style.position = "absolute"; // Aseguramos que la carta esté posicionada absolutamente dentro de su contenedor
+                            carta.style.left = `${index * espacio + 400 }px`;
+                            carta.style.display = "flex"; // Aseguramos que la carta esté visible
+                            
+                        
+                        });
+                        
+            
+                    }
+                }
+            }
+            
+
+            function actualizarEstado() {
+                var turno = localStorage.getItem("turno");
+                var host = localStorage.getItem("host");
+                var sala = document.getElementById("sala").value;
+            
+                if(sala){
+                    document.getElementById("salaActual").innerText = `Sala: ${sala}`;
+                }
+                if (turno) {
+        
+                    document.getElementById("turnoJugador").innerText = `${turno}`;
+                   
+                    
+                    
+                    if (turno === id_jugador.toString()) {
+                        document.getElementById("pasarTurno").style.display = "inline-block"; // Mostrar botón de pasar turno
+                        
+                        // Solo permitir robar si no ha robado aún en este turno
+                        document.getElementById("robarCarta").style.display = "inline-block";
+                       
+                    } else {
+                        document.getElementById("pasarTurno").style.display = "none"; // Ocultar el botón
+                        document.getElementById("robarCarta").style.display = "none"; 
+                    }
+                }
+            
+                if (host) {
+                    document.getElementById("hostJuego").innerText = `Host: Jugador ${host}`;
+                }
+
+            }
+            
+            socket.on("estado_actualizado", function(data) {
+                let turnoAnterior = localStorage.getItem("turno");
+                let nuevoTurno = data.turno;
+            
+                localStorage.setItem("cartaInicial", JSON.stringify(data.nueva_carta));
+                localStorage.setItem("turno", nuevoTurno);
+                mostrarCartaInicial(data.nueva_carta);
+               
+                // Reproduce la música solo si el turno cambió al jugador actual
+                if (nuevoTurno === localStorage.getItem("id_jugador") && turnoAnterior !== nuevoTurno) {
+                    reproducirMusicaTurno();
+                }
+            
+                if (nuevoTurno === localStorage.getItem("id_jugador")) {
+                    if (localStorage.getItem("cartaRobada") === "true") {
+                        document.getElementById("robarCarta").disabled = true;
+                    } else {
+                        document.getElementById("robarCarta").disabled = false;
+                    }
+                } else {
+                    document.getElementById("robarCarta").disabled = true;
+                }
+                
+                if (Object.keys(data.jugadores).length === 2) {
+                    mostrarCartasOcultasDeOtrosJugadores(data);
+                } else {document.getElementById("3omas").style.marginLeft = "270px"; // Ajustar el margen izquierdo
+
+                }   
+                
+                renderizarOrdenTurnos(data.jugadores, data.turno);
+                actualizarEstado();
+
+            });
+
+            function reproducirMusicaTurno() {
+                reproducirSonido("/static/musica/turno-cambio.mp3");
+            }
+            
+       
+        
+        socket.on("cartas_robadas", function(data) {
+            if (data.id == localStorage.getItem("id_jugador")) {
+                // Agregamos la carta visualmente
+                const carta = data.carta_robada;
+                const divCartas = document.getElementById("cartas");
+                const cartaElemento = document.createElement("div");
+                cartaElemento.classList.add("miCarta");
+                
+                let imgCarta = document.createElement("img");
+                imgCarta.src = `/static/img/${carta.Color.toLowerCase()}_${carta.valor}.jpg`;
+                imgCarta.alt = `${carta.Color} ${carta.valor}`;
+            
+                cartaElemento.dataset.color = carta.Color;
+                cartaElemento.dataset.valor = carta.valor;
+                cartaElemento.appendChild(imgCarta);
+                
+                //la guarda en el div donde van a ir el resto del mazo
+                divCartas.appendChild(cartaElemento);
+                cartaElemento.addEventListener("click", function(){
+                    seleccionarCarta(cartaElemento);
+                    
+                });
+                cartaElemento.addEventListener("mouseenter", () => {
+                    reproducirHoverCarta();
+                  });
+                localStorage.setItem("cartaRobada", "true"); // Actualizar el estado de cartaRobada
+                document.getElementById("robarCarta").disabled = true; // Deshabilitar el botón de robar carta
+                ajustarPosicionCartas();
+                actualizarEstado();
+                console.log("cartasrobadas: "+ localStorage.getItem("cartaRobada"));
+            }
+        });
+
+
+        socket.on("elegir_color", function(data) {
+            localStorage.setItem("valorGuardar", data.valor);
+            localStorage.setItem("esperando_color", "true");
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("modalColor").style.display = "block";
+        
+            deshabilitarInteracciones(true);
+        
+            // Si en 10 segundos no elige, asignar color aleatorio
+            var timer = setTimeout(() => {
+                const colorAleatorio = ["rojo", "azul", "amarillo", "verde"][Math.floor(Math.random() * 4)];
+                
+                socket.emit("color_elegido", {
+                    id: localStorage.getItem("id_jugador"),
+                    sala: localStorage.getItem("sala"),
+                    valor: localStorage.getItem("valorGuardar"),
+                    color: colorAleatorio
+                });
+        
+                cerrarModalColor(colorAleatorio);
+            }, 10000);
+        
+            document.querySelector("#modalColor button").onclick = function() {
+                const colorSeleccionado = document.getElementById("colorSeleccionado").value;
+                clearTimeout(timer); 
+        
+                socket.emit("color_elegido", {
+                    id: localStorage.getItem("id_jugador"),
+                    sala: data.sala,
+                    valor: localStorage.getItem("valorGuardar"),
+                    color: colorSeleccionado
+                    
+                });
+        
+                cerrarModalColor(colorSeleccionado);
+            };
+        });
+        
+        function cerrarModalColor(color) {
+            localStorage.setItem("color_elegido", color);
+            localStorage.removeItem("esperando_color");
+            localStorage.removeItem("valorGuardar");
+            document.getElementById("modalColor").style.display = "none";
+            document.getElementById("overlay").style.display = "none";
+        
+            deshabilitarInteracciones(false);
+        }
+        
+        
+        // Función que deshabilita todas las interacciones con la página
+        function deshabilitarInteracciones(desactivar) {
+            const elementosInteractivos = document.querySelectorAll(".carta, input");
+            elementosInteractivos.forEach((elemento) => {
+                if (desactivar) {
+                    elemento.disabled = true;
+                } else {
+                    elemento.disabled = false;
+                }
+            });
+        }
+        
+        socket.on("sentido_cambiado", function(data) {
+            console.log("El sentido del juego ha cambiado. Nuevo orden:", data.nuevo_sentido);
+            alert("🔄¡El sentido del juego ha cambiado!🔄");
+        });
+        
+        socket.on("jugador_saltado", function(data) {
+            console.log("Jugador saltado:", data.id_saltado);
+            alert(`🚷¡El jugador ${data.id_saltado} ha sido saltado!🚷`);
+        });
+        
+        
+            //BOTONES-ENVIAR SERVIDOR FLASK//
+            //////////////////////////////////////////////////////////////////////  
+        
+
+            document.getElementById("pasarTurno").addEventListener("click", function () {
+                
+                
+                if (localStorage.getItem("cartaRobada") !== "true") {
+                    alert("Debes robar una carta antes de pasar el turno.");
+                    return;
+                }
+            
+                const id_Jugador = localStorage.getItem("id_jugador");
+                const sala = localStorage.getItem("sala");
+            
+                socket.emit("pasar_turno", { id: id_Jugador, sala: sala });
+            
+                
+                localStorage.setItem("cartaRobada", "false");
+            
+                setTimeout(actualizarEstado, 500);
+            });
+            
+            
+            cartaRobada = false;
+            document.getElementById("robarCarta").addEventListener("click",function() {
+            
+                if (localStorage.getItem("turno") !== localStorage.getItem("id_jugador")) {
+                    alert("No es tu turno para robar carta.");
+                    return; // No permitir robar si no es su turno
+                }
+                if (localStorage.getItem("cartaRobada") === "true") {
+                    alert("Ya has robado una carta este turno.");
+                    return; // No permitir robar más de una carta por turno
+                }
+
+                const id_jugador = localStorage.getItem("id_jugador");
+                const sala = localStorage.getItem("sala");
+                
+                socket.emit("robar_carta", { id: id_jugador, sala: sala });
+                cartaRobada = true;
+                document.getElementById("robarCarta").disabled = true;
+
+        });
+
+        socket.on("lista_salas", (salas) => {
+            const contenedor = document.getElementById("listaSalas");
+            contenedor.innerHTML = ""; // Limpiar la lista previa
+        
+            const id_jugador = localStorage.getItem("id_jugador") || Math.floor(Math.random() * 10000);
+            localStorage.setItem("id_jugador", id_jugador);
+        
+            const nombre_jugador = localStorage.getItem("nombre_jugador") || "Jugador_" + id_jugador;
+        
+            salas.forEach(sala => {
+                // Comprobar si la sala ya ha comenzado (está activa)
+                if (sala.activa) {
+                    return; // Si la sala está activa, no mostrarla en la lista
+                }
+        
+                const divSala = document.createElement("div");
+                divSala.classList.add("sala");
+        
+                const nombre = document.createElement("span");
+                nombre.textContent = `Sala: ${sala.nombre} (${sala.jugadores} jugadores)  `;
+        
+                const botonUnirse = document.createElement("button");
+        
+                // Comprobar si el jugador ya está dentro de esta sala
+                const jugadorYaDentro = sala.jugadores_en_sala.some(jugador => jugador.id === id_jugador);
+        
+                if (jugadorYaDentro) {
+                    // Si el jugador ya está en la sala, mostrar que está dentro y no el botón de unirse
+                    divSala.appendChild(nombre);
+                    const mensaje = document.createElement("span");
+                    document.querySelector("span").style.fontSize = "20px";
+                    mensaje.textContent = "\nEstás en la sala, solo el host puede iniciar el juego (2 MIN).";
+                    divSala.appendChild(mensaje);
+                } else {
+                    // Si la sala no está activa, mostrar el botón de unirse
+                    botonUnirse.textContent = "Unirse";
+                    botonUnirse.addEventListener("click", () => {
+                        unirseSalaExistente(sala.nombre);  // Usa la función para unirse a la sala existente
+                        sonidoBoton(); // Reproducir sonido al hacer clic
+                    });
+                    divSala.appendChild(nombre);
+                    divSala.appendChild(botonUnirse);
+                }
+        
+                contenedor.appendChild(divSala);
+            });
+        });
+        
+        function unirseSalaExistente(nombreSala) {
+            document.getElementById("sala").value = nombreSala;
+            unirseSala();  // Llama a tu función ya existente para unirse
+        }
+        
+        setInterval(() => {
+            socket.emit("solicitar_salas");
+        }, 1000);
+        
+        socket.on('actualizar_sala', function(datos) {
+            document.getElementById('salaActual').innerText = datos.sala;
+        });
+        
+        //EVENTOS-MENSAJES-ENVIAR SERVIDOR FLASK//
+        //////////////////////////////////////////////////////////////////////  
+        socket.on("robar_carta_cliente", function(data) {
+            if (data.id == localStorage.getItem("id_jugador")) {
+                // Llamar a la función de robar carta
+                socket.emit("robar_carta", { id: data.id, sala: data.sala });
+            }
+        });
+        socket.on("mensajes_carta+4", function(data) {
+            if (data.id == localStorage.getItem("id_jugador")) {
+                alert("💣¡Te han lanzado una carta +4!💣 , y cambio de color a "+ data.color +"!");  
+            }
+        });
+        socket.on("mensajes_carta+2", function(data) {
+            if (data.id == localStorage.getItem("id_jugador")) {
+                alert("💥 ¡Te han lanzado una carta +2 ! 💥");  
+            }
+        });
+        
+        socket.on("mensajes_cartaCambioColor", function(data) {
+            alert("🎨 Cambio de color a "+ data.color +"! 🎨");  
+        });
+
+        socket.on("jugador_ganador", function(data) {
+            console.log("Evento jugador_ganador recibido:", data);
+            if (data.id == localStorage.getItem("id_jugador")) {
+                alert("👑 ¡Felicidades, has ganado el juego!👑 ");  
+            } else {
+                alert("El jugador 👑 " + data.id + "👑  ha ganado el juego.");}
+            
+            salirSala();
+        });
+        //////////////////////////////////////////////////////////////////////
+        
+        
+        
+        function actualizarMano(cartas) {
+            const divCartas = document.getElementById("cartas");
+            divCartas.innerHTML = ""; // Limpiar las cartas actuales
+
+            cartas.forEach((carta, index) => {
+                const cartaElemento = document.createElement("div");
+                cartaElemento.classList.add("miCarta");
+                cartaElemento.id = "carta" + (index + 1);
+
+                const imgCarta = document.createElement("img");
+                imgCarta.src = `/static/img/${carta.Color.toLowerCase()}_${carta.valor}.jpg`;
+                imgCarta.alt = `${carta.Color} ${carta.valor}`;
+
+                cartaElemento.dataset.color = carta.Color;
+                cartaElemento.dataset.valor = carta.valor;
+
+                cartaElemento.appendChild(imgCarta);
+
+                // Añadir evento para seleccionar la carta
+                cartaElemento.addEventListener("click", function () {
+                    seleccionarCarta(cartaElemento);
+                });
+                cartaElemento.addEventListener("mouseenter", () => {
+                    reproducirHoverCarta();
+                  });
+
+                divCartas.appendChild(cartaElemento);
+                
+            });
+
+            ajustarPosicionCartas(); // Ajustar la posición de las cartas
+        }
+
+        // Escuchar evento del servidor para actualizar la mano
+        socket.on("actualizar_mano", function (data) {
+            if (data.id === localStorage.getItem("id_jugador")) {
+                actualizarMano(data.cartas);
+            }
+        });
+
+
+        function renderizarOrdenTurnos() {
+            const sala = localStorage.getItem("sala");
+            if (!sala) {
+                console.error("No hay sala activa para obtener el orden de turnos.");
+                return;
+            }
+        
+            // Emitir un evento al servidor para solicitar los datos de los jugadores y el turno actual
+            socket.emit("obtener_orden_turnos", { sala });
+            
+            // Escuchar la respuesta del servidor
+            socket.on("orden_turnos", function (data) {
+               
+            
+                const contenedor = document.getElementById("jugadoresTurno");
+                contenedor.innerHTML = "<h4>Orden de Turnos</h4>";
+               if (Object.keys(data.jugadores).length === 2) {
+                    mostrarCartasOcultasDeOtrosJugadores(data);
+                } else {document.getElementById("3omas").style.marginLeft = "270px"; // Ajustar el margen izquierdo
+            }
+        
+                for (let id in data.jugadores) {
+                    const jugador = data.jugadores[id];
+                    const divJugador = document.createElement("div");
+                    divJugador.classList.add("jugador-turno");
+        
+                    // Añadir el número de cartas al texto del jugador
+                    const numCartas = jugador.mano.length;
+                    if (id == data.turno) {
+                        divJugador.classList.add("actual");
+                        divJugador.innerHTML = `<span class="flecha">➡️</span> ${id} (${numCartas} cartas )`;
+                    } else {
+                        divJugador.textContent = `${id} (${numCartas} cartas)`;
+                    }
+        
+                    contenedor.appendChild(divJugador);
+                }
+            });
+        }
+        socket.on("carta_actualizada", function(data) {
+            mostrarCartaInicial(data.carta); // Actualiza la carta inicial visualmente
+            reproducirSonidoCarta(); // Reproduce el sonido
+        });
+ 
+        document.getElementById("btn-cambiar-id").addEventListener("click", () => {
+       
+        const nuevoId = document.getElementById("nuevo-id").value;
+        const idActual = localStorage.getItem("id_jugador"); // Assuming the current ID is stored in localStorage
+        if (nuevoId && idActual) {
+            socket.emit("cambiar_id", { id_actual: idActual, nuevo_id: nuevoId });
+        }
+        
+    });
+
+    socket.on("id_cambiado", (data) => {
+        if (data.nuevo_id) {
+            localStorage.setItem("id_jugador", data.nuevo_id);
+            alert(`Tu ID ha sido cambiado a: ${data.nuevo_id}`);
+            
+        }
+    });
+
+    let musicaActiva = false; // Variable para controlar el estado de la música
+    let sonidosHabilitados = true; // Variable global para controlar los sonidos
+   
+    function iniciarMusica() {
+        const musica = document.getElementById("audio");
+        const botonMusica = document.getElementById("playMusic");
+
+        if (musicaActiva) {
+            musica.pause();
+            botonMusica.textContent = "🔇 Música";
+        } else {
+            musica.play().catch(error => console.error("Error al reproducir la música:", error));
+            botonMusica.textContent = "🎵 Música";
+        }
+
+        musicaActiva = !musicaActiva; // Cambia el estado de la música
+    }
+
+
+    function toggleSound() {
+        sonidosHabilitados = !sonidosHabilitados;
+        const boton = document.getElementById("toggleSound");
+        boton.textContent = sonidosHabilitados ? "🔊 Sonidos" : "🔇 Sonidos";
+    }
+
+    function reproducirSonido(audioPath) {
+        if (!sonidosHabilitados) return; // No reproducir si los sonidos están desactivados
+        const audio = new Audio(audioPath);
+        audio.volume = 0.8; // Ajusta el volumen
+        audio.play().catch(error => console.error("Error al reproducir el sonido:", error));
+    }
+
+    function sonidoBoton() {
+        reproducirSonido("/static/musica/menu_click_boton.mp3");
+    }
+
+    function reproducirSonidoCarta() {
+        reproducirSonido("/static/musica/actualizar-carta.mp3");
+    }
+
+    function reproducirMusicaTurno() {
+        reproducirSonido("/static/musica/turno-cambio.mp3");
+    }
+
+    function reproducirHoverCarta() {
+        reproducirSonido("/static/musica/card-hover.wav");
+    }
+    
+</script>
+</body>
+</html>
