@@ -99,7 +99,8 @@
 <script>
        
         var cartaSeleccionada = null;
-        var socket = io.connect("https://4duel.up.railway.app"); 
+        var socket = io.connect("https://4duel.up.railway.app", {
+             transports: ['websocket', 'polling'] });
         var id_jugador = localStorage.getItem("id_jugador") || Math.floor(Math.random() * 10000);
         localStorage.setItem("id_jugador", id_jugador);
         const sonido = document.getElementById("sonidoClick")
