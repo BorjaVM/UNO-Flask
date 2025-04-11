@@ -3,7 +3,9 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 import random
 import os
+import eventlet
 
+eventlet.monkey_patch()
 proyecto1 = Flask(__name__)
 socketio = SocketIO(proyecto1)
 
