@@ -521,4 +521,4 @@ def cambiar_id(datos):
 
 
 if __name__ == "__main__":
-    socketio.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    proyecto1.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
