@@ -2,14 +2,15 @@ import eventlet
 eventlet.monkey_patch() 
 
 from flask import Flask, render_template, request
+proyecto1 = Flask(__name__)
+
 from flask_socketio import SocketIO, emit, join_room, leave_room
+socketio = SocketIO(proyecto1, async_mode='eventlet')
+
 from flask_cors import CORS
 import random
 import os
 
-
-proyecto1 = Flask(__name__)
-socketio = SocketIO(proyecto1)
 
 
 # Variables Globales
@@ -70,21 +71,19 @@ def unirse_sala(datos):
             emit("error", {"mensaje": "La sala está ocupada, el juego ya ha comenzado.", "id": id_jugador}, room=request.sid)
             return
 
-        # Si ya estaba en otra sala, removerlo
+        # Si ya estaba en otra sala, llamar a salir_sala
         sala_anterior = jugador_a_sala.get(id_jugador)
         if sala_anterior and sala_anterior != sala:
-            if id_jugador in jugadores.get(sala_anterior, {}):
-                del jugadores[sala_anterior][id_jugador]
-                leave_room(sala_anterior)
-                emit("jugador_salio", {"id": id_jugador}, room=sala_anterior)
+            salir_sala({"id": id_jugador, "sala": sala_anterior})
 
-                if not jugadores[sala_anterior]:
-                    jugadores.pop(sala_anterior)
-                    barajas.pop(sala_anterior, None)
-                    turno_actual.pop(sala_anterior, None)
-                    carta_inicial_salas.pop(sala_anterior, None)
-                    salas_activas.pop(sala_anterior, None)
-                    sala_host.pop(sala_anterior, None)
+        # Si la sala existe pero no tiene jugadores, permitir recrearla
+        if sala in jugadores and not jugadores[sala]:
+            del jugadores[sala]
+            del barajas[sala]
+            del sala_host[sala]
+            del turno_actual[sala]
+            del carta_inicial_salas[sala]
+            salas_activas.pop(sala, None)
 
         join_room(sala)
 
@@ -99,20 +98,23 @@ def unirse_sala(datos):
             emit("cartas_repartidas", {"jugadores": jugadores[sala]}, room=request.sid)
             return
 
-        jugadores[sala][id_jugador] = {"nombre": nombre, "mano": [],  "sid": request.sid  }
+        jugadores[sala][id_jugador] = {"nombre": nombre, "mano": [], "sid": request.sid}
         jugador_a_sala[id_jugador] = sala  # ← Asignar nueva sala
 
+        # Aquí enviamos el nombre de la sala al cliente para actualizar la UI
+        emit("actualizar_sala", {
+            "sala": sala,
+            "host": sala_host[sala],
+            "jugadores": list(jugadores[sala].values())}, room=sala)
+        
         emit("mostrar_comenzar", {
             "host": sala_host[sala],
             "jugadores": list(jugadores[sala].values())
         }, room=sala)
 
-        # Aquí enviamos el nombre de la sala al cliente para actualizar la UI
-        emit("actualizar_sala", {"sala": sala}, room=request.sid)
     except Exception as e:
         print(f"Error al unir jugador a la sala: {str(e)}")
         emit("error", {"mensaje": "Ocurrió un error al unirse a la sala."}, room=request.sid)
-
 
     
 @socketio.on("salir_sala")
@@ -121,24 +123,62 @@ def salir_sala(datos):
     sala = datos["sala"]
 
     if sala in jugadores and id_jugador in jugadores[sala]:
+        # Si es el turno actual, pasarlo antes de eliminar al jugador
+        if turno_actual.get(sala) == id_jugador:
+            ids_jugadores = list(jugadores[sala].keys())
+            if id_jugador in ids_jugadores:
+                index_actual = ids_jugadores.index(id_jugador)
+                siguiente_turno = ids_jugadores[(index_actual + 1) % len(ids_jugadores)]
+                turno_actual[sala] = siguiente_turno
+
         leave_room(sala)
         del jugadores[sala][id_jugador]
 
-        if sala_host[sala] == id_jugador and jugadores[sala]:
-            sala_host[sala] = next(iter(jugadores[sala]))
+        # Si el jugador que salió era el host
+        if sala_host[sala] == id_jugador:
+            if jugadores[sala]:  # Si aún hay jugadores en la sala
+                nuevo_host = next(iter(jugadores[sala]))  # Asignar el primer jugador como nuevo host
+                sala_host[sala] = nuevo_host
+                emit("nuevo_host", {"nuevo_host": nuevo_host}, room=sala)
+            else:
+                # Si no quedan jugadores, eliminar la sala
+                limpiar_sala(sala)
+                return
 
+        # Si la sala queda vacía
         if not jugadores[sala]:
-            del jugadores[sala]
-            del barajas[sala]
-            del sala_host[sala]
-            del turno_actual[sala]
-            del carta_inicial_salas[sala]
+            limpiar_sala(sala)
+            return
 
+        # Si solo queda un jugador y el juego ya comenzó
+        if len(jugadores[sala]) == 1 and salas_activas.get(sala, False):
+            jugador_restante = next(iter(jugadores[sala]))
+            emit("expulsado_por_soledad", {"mensaje": "Quedaste solo en la sala, así que has sido redirigido al menú 😢"}
+                 , room=jugadores[sala][jugador_restante]["sid"])
+            leave_room(sala, jugadores[sala][jugador_restante]["sid"])
+            limpiar_sala(sala)
+            
+
+        # Notificar al resto que un jugador salió
         emit("jugador_salio", {"id": id_jugador}, room=sala)
+
+
+def limpiar_sala(sala):
+    jugadores.pop(sala, None)
+    barajas.pop(sala, None)
+    sala_host.pop(sala, None)
+    turno_actual.pop(sala, None)
+    carta_inicial_salas.pop(sala, None)
+    salas_activas.pop(sala, None)
+
+      
 
 @socketio.on("comenzar_juego")
 def comenzar_juego(datos):
     sala = datos["sala"]
+
+    if len(jugadores[sala]) < 2:
+        return
 
     # Marcar la sala como activa (ya comenzó el juego)
     salas_activas[sala] = True
@@ -156,9 +196,7 @@ def comenzar_juego(datos):
         "host": sala_host[sala]
     }, room=sala)
 
-    # Aquí es donde puedes excluir esta sala de la lista de salas disponibles.
-    # El evento "lista_salas" ya excluye automáticamente las salas activas.
-
+   
 
 @socketio.on("obtener_estado")
 def obtener_estado(datos):
@@ -166,6 +204,22 @@ def obtener_estado(datos):
     id_jugador = request.sid
 
     if sala in jugadores:
+        # Si solo queda un jugador y el juego ya comenzó
+        if len(jugadores[sala]) == 1 and salas_activas.get(sala, False):
+            jugador_restante = next(iter(jugadores[sala]))
+            emit("expulsado_por_soledad", {"mensaje": "Quedaste solo en la sala, así que has sido redirigido al menú 😢"}
+                 , room=jugadores[sala][jugador_restante]["sid"])
+            leave_room(sala, jugadores[sala][jugador_restante]["sid"])
+            limpiar_sala(sala)
+           
+
+        # Emitir la lista de jugadores y el estado de la sala
+        emit("actualizar_sala", {
+            "sala": sala,
+            "host": sala_host[sala],
+            "jugadores": [{"id": id_jugador, "nombre": jugador["nombre"]} for id_jugador, jugador in jugadores[sala].items()]
+        }, room=request.sid)
+
         if len(jugadores[sala]) < 2:
             return
 
@@ -187,12 +241,15 @@ def obtener_estado(datos):
             "carta_inicial": carta_inicial if juego_activo else None
         }, room=id_jugador)
 
-        if juego_activo:
-            socketio.emit("estado_actualizado", {
-                "turno": turno,
-                "nueva_carta": carta_inicial
-            }, room=sala)
+        emit("mostrar_comenzar", {
+            "host": sala_host[sala],
+            "jugadores": list(jugadores[sala].values())
+        }, room=sala)
 
+     
+    
+    
+            
 
 
 @socketio.on("validarCarta")
@@ -514,15 +571,13 @@ def cambiar_id(datos):
         # Update the turn if necessary
         if turno_actual[sala] == id_actual:
             turno_actual[sala] = nuevo_id
+    
 
     emit("id_cambiado", {"id_actual": id_actual, "nuevo_id": nuevo_id}, room=request.sid)
     
-    emit("mostrar_comenzar", {
-            "host": sala_host[sala],
-            "jugadores": list(jugadores[sala].values())
-        }, room=sala)
-
+    
 
 
 if __name__ == "__main__":
     socketio.run(proyecto1, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    #socketio.run(proyecto1,debug=True)
