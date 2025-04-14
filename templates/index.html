@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, user-scalable=no">
     
     <title>+4 DUEL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -11,71 +11,85 @@
 
 </head>
 <body>
-    <div id="sonidos">
-        <button id="toggleSound" class="contenedor-musica1" onclick="toggleSound()">🔊 Sonidos</button>
-    </div>
 
-    <div id="musica" >
-        <audio id="audio" loop>
-            <source src="/static/musica/chill1.mp3" type="audio/mpeg">
-            Tu navegador no soporta audio HTML5.
-        </audio>
-        <button id="playMusic" class="contenedor-musica" onclick="iniciarMusica()">🔇 Música</button>
-    </div>
-
-    <div id="contenedor-cambiar-id">
-        <h3>Cambiar ID</h3>
-        <input type="text" id="nuevo-id" placeholder="Nuevo ID">
-        <button id="btn-cambiar-id" class="cambiarNombrebtn" onclick= "sonidoBoton()">Cambiar</button>
-       
-    </div>
-
-    <div class="container" id="configuracionSala">
-        <h1 class="negro"><span2 class="animacion">+4</span2> DUEL</h1>
-        <h3 class="negro">“Reinterpretación personal del juego UNO con fines educativos.”</h3>
-      
-        <div class="sala-config">
-          <h2 class="negro">Sala Pública</h2>
-          <div class="form-row">
-            <label for="sala" class="negro">Nombre de la Sala:</label>
-            <input type="text" id="sala" placeholder="Ingrese el nombre">
-            <button onclick="sonidoBoton();unirseSala()">Crear sala</button>
-          </div>
-      
-          <div class="estado-sala">
-            <h3 >Estás en la sala: <span id="salaActual" class="salaNombre"></span></h3>
-            <h3>Jugadores en la sala: <span id="jugadoresCount">0</span></h3>
-          </div>
+        <div id="sonidos">
+            <button id="toggleSound" class="contenedor-musica1" onclick="toggleSound()">🔊 </button>
         </div>
-      </div>
-      
 
-<div class="container" id="botonComenzar" style="display:none;">
-    <button id="comenzarBtn" onclick="comenzarJuego(); sonidoBoton()">⏩⏩ Comenzar Juego ⏪⏪</button>
-</div>
+        <div id="musica" >
+            <audio id="audio" loop>
+                <source src="/static/musica/musica2.mp3?v=2" type="audio/mpeg">
+                Tu navegador no soporta audio HTML5.
+            </audio>
+            <button id="playMusic" class="contenedor-musica" onclick="iniciarMusica()">🔇 </button>
+        </div>
+   
 
-    <div class="container" id="listaSalasContainer">
-        <h2 class="lista">Lista de Salas:</h2>
-        <ul id="listaSalas" ></ul>
+<div id="buscarSala">
+             
+    <div id="contenedor-cambiar-id">
+        <h3>Cambiar Nombre</h3>
+        <input type="text" id="nuevo-id" placeholder="Nuevo Nombre">
+        <button id="btn-cambiar-id" class="cambiarNombrebtn" onclick= "sonidoBoton()">Cambiar</button>
+    
     </div>
 
-
-
-<div class="container1" id="partida" style="display:none;">
-    <button onclick="salirSala()" class="btn-salir"> ❌ Salir Sala</button>
-    <h3><span id="hostJuego" class="hostSala"></span></h3>
-    <div id="contenedor-rivales" class="contenedor-rivales"></div>
-    <h2 id="3omas"> Es el turno de<span id="turnoJugador" class="nombreturno"></span></h2>
-    <div id="cartaInicial"></div>
-    <button id="robarCarta" class="btn-robar"  onclick= "sonidoBoton()">🃏 Robar Carta</button>
-    <button id="pasarTurno" class="btn-turno"  onclick= "sonidoBoton()">🔁 Pasar Turno</button>
-    <div id="cartas"></div>
-    <div id="jugadoresTurno" class="contenedor-turnos"></div>
-
-    
-    
-
+        <div class="container" id="configuracionSala">
+            <h1 class="negro"><span2 class="animacion">+4</span2> DUEL</h1>
+            <h3 class="negro">“Reinterpretación personal del juego UNO con fines educativos.”</h3>
+        
+            <div class="sala-config">
+            <h2 class="negro">Sala Pública</h2>
+            <div class="form-row">
+                <label for="sala" class="negro">Nombre de la Sala:</label>
+                <input type="text" id="sala" placeholder="Ingrese el nombre">
+                <button onclick="sonidoBoton();unirseSala()">Crear sala</button>
+            </div>
+        
+            </div>
+        </div>
+        <div class="container" id="listaSalasContainer">
+            <h2 class="lista">Lista de Salas:</h2>
+            <ul id="listaSalas" ></ul>
+        </div>
 </div>
+
+<div id="nombreJugador"></div>
+ 
+
+        <div id="estadoSala" style="display: none;">
+            <div class="container">
+                <h3 >SALA:   <span id="salaActual" class="salaNombre"></span></h3>
+                <div id="jugadoresContainer">
+                    <h4>Jugadores en la sala:</h4>
+                    <ul id="listaJugadores"></ul>
+                </div>
+                <div class="botonesSalaEstado">
+                    <button id="botonComenzar" onclick="comenzarJuego(); sonidoBoton()" style="display:none;">Comenzar</button>
+                    <button id="botonSalir"  onclick="salirSala()">Salir Sala</button>
+                </div>
+            </div>
+        </div>
+
+    <div class="container1" id="partida" style="display:none;">
+        <button onclick="salirSala()" class="btn-salir"> SALIR</button>
+        <h3><span id="hostJuego" class="hostSala"></span></h3>
+        <div id="contenedor-rivales" class="contenedor-rivales"></div>
+        <h2 id="3omas" class="posicionturno"> Es el turno de<span id="turnoJugador" class="nombreturno"></span></h2>
+        <div id="cartaInicial"></div>
+    
+        <div id="animacionEspera" class="animacionEspera" style="display: none;"> 
+            <span class="punto"></span>
+            <span class="punto"></span>
+            <span class="punto"></span>
+        </div>
+            
+        <button id="robarCarta" class="btn-robar"  onclick= "sonidoBoton()">🃏 Robar</button>
+        <button id="pasarTurno" class="btn-turno"  onclick= "sonidoBoton()">🔁 Turno</button>
+        <div id="cartas"></div>
+        <div id="jugadoresTurno" class="contenedor-turnos"></div>
+    
+    </div>
 
 <div class="modal" id="modalColor" style="display: none;">
     <div class="modal-content">
@@ -99,10 +113,11 @@
 <script>
        
         var cartaSeleccionada = null;
-        var socket = io.connect("https://4duel.up.railway.app", {
-             transports: ['websocket', 'polling'] });
+        //var socket = io.connect("http://127.0.0.1:5000"); 
+        var socket = io.connect("https://4duel.up.railway.app", {transports: ['websocket', 'polling'] });
         var id_jugador = localStorage.getItem("id_jugador") || Math.floor(Math.random() * 10000);
         localStorage.setItem("id_jugador", id_jugador);
+        const nombreJugadorDiv = document.getElementById("nombreJugador");
         const sonido = document.getElementById("sonidoClick")
         const hoverCarta = document.getElementById("sonidoHoverCarta")
         
@@ -113,6 +128,8 @@
             }
            
         });
+
+      
 
     
 
@@ -129,6 +146,8 @@
             localStorage.setItem("sala", sala);
             document.getElementById("salaActual").innerText = sala;
             socket.emit("unirse_sala", { id: id_jugador, nombre: nombre_jugador, sala: sala });
+
+           
         }
         
        
@@ -147,11 +166,12 @@
                 localStorage.removeItem("turno");
                 localStorage.removeItem("host");
                 location.reload();
+             
         };
            
         socket.on("estado_actual", function(data) {
             if (!data.juegoActivo) {
-                localStorage.setItem("juegoActivo", "false");
+                localStorage.setItem("juegoActivo", data.juegoActivo ? "true" : "false");
                 document.getElementById("configuracionSala").style.display = "block";
                 document.getElementById("listaSalasContainer").style.display = "block";
                 document.getElementById("partida").style.display = "none";
@@ -171,54 +191,76 @@
             renderizarOrdenTurnos(data.jugadores, data.turno);
         
             // Mostrar cartas ocultas si hay dos jugadores
-            if (Object.keys(data.jugadores).length === 2) {
+            if (data && data.jugadores && Object.keys(data.jugadores).length === 2) {
                 mostrarCartasOcultasDeOtrosJugadores(data);
-            } else {document.getElementById("3omas").style.marginLeft = "270px";
-                            
-        } // Ajustar el margen izquierdo
+            } 
+                        
         });
         
         
-        window.onload = function() {
-            var sala_guardada = localStorage.getItem("sala");
-            var juegoActivo = localStorage.getItem("juegoActivo");
-            var cartaRobada = localStorage.getItem("cartaRobada") === "true"; 
-           
-            if (localStorage.getItem("esperando_color") === "true") {
-                socket.emit("solicitar_color", {
-                    id: localStorage.getItem("id_jugador"),
-                    sala: localStorage.getItem("sala")
-                });
-            }
-            
+        window.onload = function () {
+            try {
+                var sala_guardada = localStorage.getItem("sala");
+                var juegoActivo = localStorage.getItem("juegoActivo") === "true"; // Convertir a booleano
+                var cartaRobada = localStorage.getItem("cartaRobada") === "true"; // Convertir a booleano
+               
+                if(nombreJugadorDiv){
+                    const nombreJugador = localStorage.getItem("id_jugador");
+                    nombreJugadorDiv.innerText = `ID: Jugador ${nombreJugador}`;
+                }
+
+                if (sala_guardada) {
+                    const id_jugador = localStorage.getItem("id_jugador");
+                    const nombre_jugador = id_jugador.startsWith("Jugador") ? `Jugador ${id_jugador}` : id_jugador;
         
+                    // Verificar si los elementos del DOM existen antes de usarlos
+                    const salaActualElement = document.getElementById("salaActual");
+                    if (salaActualElement) {
+                        salaActualElement.innerText = sala_guardada;
+                    }
         
-            if (sala_guardada) {
-                const id_jugador = localStorage.getItem("id_jugador");
-                const nombre_jugador = id_jugador.startsWith("Jugador") ? `Jugador ${id_jugador}` : id_jugador;
-            
-                document.getElementById("salaActual").innerText = sala_guardada;
-                socket.emit("unirse_sala", { id: id_jugador, nombre: id_jugador, sala: sala_guardada });
+                    // Emitir eventos al servidor para unirse a la sala y obtener el estado
+                    socket.emit("unirse_sala", { id: id_jugador, nombre: nombre_jugador, sala: sala_guardada });
+                    socket.emit("obtener_estado", { sala: sala_guardada });
 
-                socket.emit("obtener_estado", { sala: sala_guardada });
-            }
+                    
         
-            if (juegoActivo === "true") {
-
-                mostrarJuego();
-                actualizarEstado();
-
-                // Renderizar el orden de turnos al recargar la página
-                const jugadores = JSON.parse(localStorage.getItem("jugadores")) || {};
-                const turno = localStorage.getItem("turno");
-                renderizarOrdenTurnos(jugadores, turno);
-
-                // Mostrar cartas ocultas si hay dos jugadores
-                socket.emit("solicitar_cartas_ocultas", { sala: sala_guardada , id: id_jugador });
+                    if (juegoActivo) {
+                        mostrarJuego();
+                        actualizarEstado();
+                        
+                        // Renderizar el orden de turnos al recargar la página
+                        const jugadores = JSON.parse(localStorage.getItem("jugadores")) || {};
+                        const turno = localStorage.getItem("turno");
+                        renderizarOrdenTurnos(jugadores, turno);
+        
+                        // Mostrar cartas ocultas si hay dos jugadores
+                        socket.emit("solicitar_cartas_ocultas", { sala: sala_guardada, id: id_jugador });
+        
+                        if (localStorage.getItem("esperando_color") === "true") {
+                            socket.emit("solicitar_color", {
+                                id: localStorage.getItem("id_jugador"),
+                                sala: localStorage.getItem("sala"),
+                            });
+                        }
+        
+                        console.log("Turno al recargar:", localStorage.getItem("turno"));
+                        console.log("Carta robada al recargar:", localStorage.getItem("cartaRobada"));
+                    } else {
+                        // Mostrar el estado de la sala si el juego no ha comenzado
+                        document.getElementById("estadoSala").style.display = "block";
+                        document.getElementById("buscarSala").style.display = "none";
+                        document.getElementById("partida").style.display = "none";
+                    }
+                } else {
+                    // Si no hay sala guardada, mostrar la búsqueda de sala
+                    document.getElementById("estadoSala").style.display = "none";
+                    document.getElementById("buscarSala").style.display = "block";
+                    document.getElementById("partida").style.display = "none";
+                }
+            } catch (error) {
+                console.error("Error en window.onload:", error);
             }
-            
-            console.log("Turno al recargar:", localStorage.getItem("turno"));
-            console.log("Carta robada al recargar:", localStorage.getItem("cartaRobada"));
         };
         
         
@@ -271,7 +313,7 @@
 
                 // Agregar la carta al contenedor de cartas
                 divCartas.appendChild(cartaElemento);
-                bordeImagenCarta(cartaElemento);
+               
             });
         
             // Ajustar la posición de las cartas
@@ -281,18 +323,34 @@
         
         
         socket.on("mostrar_comenzar", function(data) {
-            id_jugador = localStorage.getItem("id_jugador");
-            document.getElementById("jugadoresCount").innerText = data.jugadores.length;
-            if (data.host === id_jugador && data.jugadores.length > 1) {
+            var juegoActivo = localStorage.getItem("juegoActivo");
+            var id_jugador = localStorage.getItem("id_jugador");
+        
+        
+            // Mostrar el botón de comenzar si el jugador es el host y hay más de un jugador
+            if (data.host === id_jugador && data.jugadores.length > 1 ) {
                 document.getElementById("botonComenzar").style.display = "flex";
+            } else {
+                document.getElementById("botonComenzar").style.display = "none";
             }
         });
         
+        socket.on("nuevo_host",function(data){
+            const nuevoHost = data.nuevo_host;
+            localStorage.setItem("host", nuevoHost);
+            document.getElementById("hostJuego").innerText = `Host: Jugador ${nuevoHost}`;
+            if (nuevoHost === localStorage.getItem("id_jugador") && localStorage.getItem("juegoActivo") === "false") {
+                document.getElementById("botonComenzar").style.display = "flex";
+            } 
+        });
+
         function comenzarJuego() {
             socket.emit("comenzar_juego", { sala: localStorage.getItem("sala") });
             document.getElementById("botonComenzar").style.display = "none";
             document.getElementById("configuracionSala").style.color = "black";
             document.getElementById("contenedor-cambiar-id").style.display = "none";
+            document.getElementById("estadoSala").style.display = "none";
+            document.getElementById("buscarSala").style.display = "none";
             document.body.style.overflow = "hidden"; // Deshabilita el scroll
 
            
@@ -311,7 +369,7 @@
             
             imgCarta.classList.add("cartaInicial");
             cartaElemento.appendChild(imgCarta);
-            bordeImagenCarta(cartaElemento);
+          
 
         }
            
@@ -368,23 +426,19 @@
                 //  Habilitar botón de robar carta si es el primer turno
                 if (data.turno === localStorage.getItem("id_jugador")) {
                     document.getElementById("robarCarta").disabled = false;
+                    document.getElementById("animacionEspera").style.display = "none";
                 } else {
                     document.getElementById("robarCarta").disabled = true;
+                    document.getElementById("animacionEspera").style.display = "flex";
                 }
             });
             
-        function bordeImagenCarta(cartaElemento){
-            if (cartaElemento.dataset.color === "negro" && cartaElemento.dataset.valor === "cambioBaraja") {
-                cartaElemento.style.padding = "0px ";
-                cartaElemento.style.backgroundColor = "black";
-            }
-        }
-        
        
         function mostrarJuego() {
             document.getElementById("listaSalasContainer").style.display = "none";
             document.getElementById("configuracionSala").style.display = "none";
             document.getElementById("contenedor-cambiar-id").style.display = "none";
+            document.getElementById("estadoSala").style.display = "none";
             document.getElementById("partida").style.display = "block";
             document.body.style.overflow = "hidden"; // Deshabilita el scroll
             
@@ -431,18 +485,31 @@
             let posInicial = cartaInicial.getBoundingClientRect();  // Posición de la carta inicial
             let posCartaMover = cartaSeleccionada.getBoundingClientRect();  // Posición de la carta seleccionada
         
+            const contenedor = document.getElementById("partida");
+            const escalaX = contenedor.offsetWidth / contenedor.getBoundingClientRect().width;
+            const escalaY = contenedor.offsetHeight / contenedor.getBoundingClientRect().height;
+
             // Calcular las diferencias en X y Y
-            let deltaX = posInicial.left - posCartaMover.left;
-            let deltaY = posInicial.top - posCartaMover.top;
+            let deltaX = (posInicial.left + posInicial.width / 2 - (posCartaMover.left + posCartaMover.width / 2)) / escalaX;
+            let deltaY = (posInicial.top + posInicial.height / 2 - (posCartaMover.top + posCartaMover.height / 2)) / escalaY;
         
             // Forzar el reflujo para asegurar que el estilo se renderiza antes de aplicar la animación
             cartaSeleccionada.offsetHeight;  // Forzamos un reflujo
             cartaSeleccionada.style.position = 'absolute';  // Necesitamos 'absolute' para que 'transform' funcione
             cartaSeleccionada.style.transition = "transform 0.4 s ease-in-out";  // Definir la duración de la animación
-            cartaSeleccionada.style.transform = `translate(${deltaX-10}px, ${deltaY-65}px)`;  // Retraso muy corto para permitir que el navegador procese el estilo antes de la animación
+            cartaSeleccionada.style.transform = `translate(${deltaX }px, ${deltaY-75}px) scale(1.3)`;  // Retraso muy corto para permitir que el navegador procese el estilo antes de la animación
+        
+             // Restaurar el tamaño original después de la animación
+             setTimeout(() => {
+                cartaSeleccionada.style.transform = `translate(${deltaX}px, ${deltaY-75}px) scale(1.1)`; // Volver al tamaño original
+            }, 400); // Duración de la animación
+        
+        
         }
-         
-            
+          
+
+           
+                
 
             function jugarCarta() {
                 const cartaInicial = JSON.parse(localStorage.getItem("cartaInicial"));
@@ -483,7 +550,7 @@
             
                 // Recorremos todos los jugadores menos el jugador actual
                 for (var otroId in data.jugadores) {
-                    if (otroId !== id_jugador) {
+                    if (otroId !== localStorage.getItem("id_jugador")) {
                         var manoOtro = data.jugadores[otroId].mano || [];
                         var divOtro = document.getElementById("cartas-jugador-" + otroId);
             
@@ -551,6 +618,7 @@
             
                 if(sala){
                     document.getElementById("salaActual").innerText = `Sala: ${sala}`;
+                    
                 }
                 if (turno) {
         
@@ -559,14 +627,14 @@
                     
                     
                     if (turno === id_jugador.toString()) {
-                        document.getElementById("pasarTurno").style.display = "inline-block"; // Mostrar botón de pasar turno
+                        document.getElementById("pasarTurno").style.visibility = "visible"; // Mostrar botón de pasar turno
                         
                         // Solo permitir robar si no ha robado aún en este turno
-                        document.getElementById("robarCarta").style.display = "inline-block";
+                        document.getElementById("robarCarta").style.visibility = "visible";
                        
                     } else {
-                        document.getElementById("pasarTurno").style.display = "none"; // Ocultar el botón
-                        document.getElementById("robarCarta").style.display = "none"; 
+                        document.getElementById("pasarTurno").style.visibility = "hidden"; // Ocultar el botón
+                        document.getElementById("robarCarta").style.visibility = "hidden"; 
                     }
                 }
             
@@ -580,6 +648,7 @@
                 let turnoAnterior = localStorage.getItem("turno");
                 let nuevoTurno = data.turno;
             
+              
                 localStorage.setItem("cartaInicial", JSON.stringify(data.nueva_carta));
                 localStorage.setItem("turno", nuevoTurno);
                 mostrarCartaInicial(data.nueva_carta);
@@ -590,6 +659,7 @@
                 }
             
                 if (nuevoTurno === localStorage.getItem("id_jugador")) {
+                    document.getElementById("animacionEspera").style.display = "none"; 
                     if (localStorage.getItem("cartaRobada") === "true") {
                         document.getElementById("robarCarta").disabled = true;
                     } else {
@@ -597,24 +667,19 @@
                     }
                 } else {
                     document.getElementById("robarCarta").disabled = true;
+                    document.getElementById("animacionEspera").style.display = "flex"; 
                 }
                 
-                if (Object.keys(data.jugadores).length === 2) {
+                if (data && data.jugadores && Object.keys(data.jugadores).length === 2) {
                     mostrarCartasOcultasDeOtrosJugadores(data);
-                } else {document.getElementById("3omas").style.marginLeft = "270px"; // Ajustar el margen izquierdo
-
-                }   
-                
+                } 
+            
                 renderizarOrdenTurnos(data.jugadores, data.turno);
                 actualizarEstado();
 
             });
 
-            function reproducirMusicaTurno() {
-                reproducirSonido("/static/musica/turno-cambio.mp3");
-            }
-            
-       
+        
         
         socket.on("cartas_robadas", function(data) {
             if (data.id == localStorage.getItem("id_jugador")) {
@@ -721,6 +786,11 @@
             alert(`🚷¡El jugador ${data.id_saltado} ha sido saltado!🚷`);
         });
         
+        socket.on("jugador_salio", function(data) {
+            const idJugadorSalio = data.id;
+            console.log(`El jugador ${idJugadorSalio} ha salido de la sala.`);
+            actualizarEstado(); // Actualiza el estado de la sala
+        }); 
         
             //BOTONES-ENVIAR SERVIDOR FLASK//
             //////////////////////////////////////////////////////////////////////  
@@ -796,9 +866,8 @@
                 if (jugadorYaDentro) {
                     // Si el jugador ya está en la sala, mostrar que está dentro y no el botón de unirse
                     divSala.appendChild(nombre);
-                    const mensaje = document.createElement("span");
-                    document.querySelector("span").style.fontSize = "20px";
-                    mensaje.textContent = "\nEstás en la sala, solo el host puede iniciar el juego (2 MIN).";
+                    const mensaje = document.createElement("div");
+                    mensaje.textContent = "\nEstás en la sala, solo el host puede iniciar el juego (2 Jugadores MIN).";
                     divSala.appendChild(mensaje);
                 } else {
                     // Si la sala no está activa, mostrar el botón de unirse
@@ -822,10 +891,39 @@
         
         setInterval(() => {
             socket.emit("solicitar_salas");
+            socket.emit("obtener_estado", { sala: localStorage.getItem("sala") });
+
         }, 1000);
         
-        socket.on('actualizar_sala', function(datos) {
-            document.getElementById('salaActual').innerText = datos.sala;
+        socket.on("actualizar_sala", function(data) {
+            // Mostrar el estado de la sala
+            document.getElementById("estadoSala").style.display = "block";
+            document.getElementById("buscarSala").style.display = "none";
+        
+            // Actualizar la lista de jugadores
+            const listaJugadores = document.getElementById("listaJugadores");
+            listaJugadores.innerHTML = ""; // Limpiar la lista
+            data.jugadores.forEach(jugador => {
+                const li = document.createElement("li");
+                li.textContent = "Jugador " + jugador.nombre;
+                
+                    // Agregar un emoji de corona si el jugador es el host
+                if (data.host === jugador.id) {
+                    const emoji = document.createElement("span");
+                    emoji.textContent = "‎ ‎ ‎ 👑"; 
+                    li.appendChild(emoji);
+                }           
+                
+                listaJugadores.appendChild(li);
+            });
+        
+            // Mostrar el botón de comenzar si el jugador es el host
+            const idJugador = localStorage.getItem("id_jugador");
+            if (data.host === idJugador) {
+                document.getElementById("botonComenzar").style.display = "block";
+            } else {
+                document.getElementById("botonComenzar").style.display = "none";
+            }
         });
         
         //EVENTOS-MENSAJES-ENVIAR SERVIDOR FLASK//
@@ -904,6 +1002,27 @@
             }
         });
 
+        socket.on("expulsado_por_soledad", function(data) {
+            alert(data.mensaje);
+        
+            // Reset visual
+            document.getElementById("estadoSala").style.display = "none";
+            document.getElementById("buscarSala").style.display = "flex";
+            document.getElementById("partida").style.display = "none";
+        
+            // Reset data
+            localStorage.removeItem("sala");
+            localStorage.removeItem("juegoActivo");
+            localStorage.removeItem("turno");
+            localStorage.removeItem("host");
+            localStorage.removeItem("colorElegido");
+            localStorage.removeItem("cartaRobada");
+            localStorage.removeItem("jugadores");
+            localStorage.removeItem("cartaInicial");
+            location.reload();
+        });
+        
+        
 
         function renderizarOrdenTurnos() {
             const sala = localStorage.getItem("sala");
@@ -920,11 +1039,10 @@
                
             
                 const contenedor = document.getElementById("jugadoresTurno");
-                contenedor.innerHTML = "<h4>Orden de Turnos</h4>";
-               if (Object.keys(data.jugadores).length === 2) {
+                contenedor.innerHTML = "<h4>TURNOS</h4>";
+               if (data && data.jugadores && Object.keys(data.jugadores).length === 2) {
                     mostrarCartasOcultasDeOtrosJugadores(data);
-                } else {document.getElementById("3omas").style.marginLeft = "270px"; // Ajustar el margen izquierdo
-            }
+                } 
         
                 for (let id in data.jugadores) {
                     const jugador = data.jugadores[id];
@@ -952,7 +1070,7 @@
         document.getElementById("btn-cambiar-id").addEventListener("click", () => {
        
         const nuevoId = document.getElementById("nuevo-id").value;
-        const idActual = localStorage.getItem("id_jugador"); // Assuming the current ID is stored in localStorage
+        const idActual = localStorage.getItem("id_jugador");
         if (nuevoId && idActual) {
             socket.emit("cambiar_id", { id_actual: idActual, nuevo_id: nuevoId });
         }
@@ -960,13 +1078,31 @@
     });
 
     socket.on("id_cambiado", (data) => {
+        location.reload();
         if (data.nuevo_id) {
             localStorage.setItem("id_jugador", data.nuevo_id);
             alert(`Tu ID ha sido cambiado a: ${data.nuevo_id}`);
+            if(nombreJugadorDiv){
+                const nombreJugador = data.nuevo_id
+                nombreJugadorDiv.innerText = `ID: Jugador ${nombreJugador}`;
+            }
+    
+            // Reingresa a la sala con el nuevo ID
+            const sala = localStorage.getItem("sala");
+            if (sala) {
+                socket.emit("unirse_sala", {
+                    id: data.nuevo_id,
+                    nombre: data.nuevo_id,
+                    sala: sala
+                });
+    
+                socket.emit("obtener_estado", { sala: sala });
+            }
             
         }
+        
     });
-
+    
     let musicaActiva = false; // Variable para controlar el estado de la música
     let sonidosHabilitados = true; // Variable global para controlar los sonidos
    
@@ -976,10 +1112,10 @@
 
         if (musicaActiva) {
             musica.pause();
-            botonMusica.textContent = "🔇 Música";
+            botonMusica.textContent = "🔇";
         } else {
             musica.play().catch(error => console.error("Error al reproducir la música:", error));
-            botonMusica.textContent = "🎵 Música";
+            botonMusica.textContent = "🎵";
         }
 
         musicaActiva = !musicaActiva; // Cambia el estado de la música
@@ -989,7 +1125,7 @@
     function toggleSound() {
         sonidosHabilitados = !sonidosHabilitados;
         const boton = document.getElementById("toggleSound");
-        boton.textContent = sonidosHabilitados ? "🔊 Sonidos" : "🔇 Sonidos";
+        boton.textContent = sonidosHabilitados ? "🔊" : "🔈";
     }
 
     function reproducirSonido(audioPath) {
@@ -1014,6 +1150,7 @@
     function reproducirHoverCarta() {
         reproducirSonido("/static/musica/card-hover.wav");
     }
+
     
 </script>
 </body>
