@@ -1117,6 +1117,7 @@
         } else {
             musica.play().catch(error => console.error("Error al reproducir la música:", error));
             botonMusica.textContent = "🎵";
+            audio.volume = 0.8;
         }
 
         musicaActiva = !musicaActiva; // Cambia el estado de la música
