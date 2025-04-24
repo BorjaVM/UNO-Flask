@@ -1,4 +1,5 @@
 Flask
 Flask-SocketIO
 eventlet
-Flask-CORS
+Flask-CORS==5.0.1
+
