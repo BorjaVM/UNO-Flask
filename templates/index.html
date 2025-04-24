@@ -891,7 +891,7 @@
         
         setInterval(() => {
             socket.emit("solicitar_salas");
-            socket.emit("obtener_estado", { sala: localStorage.getItem("sala") });
+            //socket.emit("obtener_estado", { sala: localStorage.getItem("sala") });
 
         }, 1000);
         
