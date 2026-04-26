@@ -9,20 +9,20 @@ If anyone is interested in helping improve the game, whether it's by adding new 
 
 To create a new environment:
 
-python -m venv venv
+  **python -m venv venv**
 
 
 Activate environment (CMD):
 
-.\venv\Scripts\activate
+  **.\venv\Scripts\activate**
 
 
 Install specific libraries:
 
-.\venv\Scripts\pip.exe install flask flask-socketio flask-cors eventlet
+  **.\venv\Scripts\pip.exe install flask flask-socketio flask-cors eventlet**
 
-
-
+Run if environment is already activated:
+ ** python mazo.py**
 
 
 
