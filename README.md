@@ -5,6 +5,15 @@ I'm currently recreating the UNO game on the web to play with friends online whi
 If anyone is interested in helping improve the game, whether it's by adding new features, refining the design, or fixing bugs, you're more than welcome to join the project! It's a great opportunity to collaborate, learn together, and make the game even better. Let me know if you'd like to contribute!
 
 
+To create a new environment:
+<mark> python -m venv venv </mark>
+
+.\venv\Scripts\activate
+
+.\venv\Scripts\pip.exe install flask flask-socketio flask-cors eventlet
+
+
+
 
 
 
