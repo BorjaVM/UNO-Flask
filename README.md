@@ -22,6 +22,7 @@ Install specific libraries:
   **.\venv\Scripts\pip.exe install flask flask-socketio flask-cors eventlet**
 
 Run if environment is already activated:
+
  ** python mazo.py**
 
 
